@@ -1,0 +1,100 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use DBI;
+use Net::SSH;
+use Data::Dumper;
+use Net::SSH qw(ssh issh sshopen2 sshopen3);
+
+my $adressdb = '/opt/sshextend/usr/share/sshextend/base.db';
+my $dbh = DBI->connect ("dbi:SQLite:dbname=$adressdb","","");
+
+$dbh->do("
+CREATE TABLE if not exists `address` (
+	`id`	INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+	`name`	VARCHAR(255),
+	`port`	INTEGER NOT NULL DEFAULT 22,
+	`host`	VARCHAR(255)
+);
+");
+
+# first flag
+my $flag = $ARGV[0];
+unless ($ARGV[0]) {
+	print ("Exec a sshext -h\n");
+	die("text");
+}
+my $reader = IO::File->new();
+my $writer = IO::File->new();
+if ($flag eq '-c') {
+	my $name = $ARGV[1];
+	if ($name) {
+		my $connectdata = $dbh->selectall_arrayref("SELECT * FROM address WHERE name = ?", undef, $name);
+		unless ($connectdata->[-1]) { # if notifications table is empty
+			print("Unexpected error");
+			return;
+		}
+		foreach my $data (@$connectdata) {
+			my $id = $data->[0];
+			my $localname = $data->[1];
+			my $port = $data->[2];
+			my $address = $data->[3];
+			$ENV{HOST} = $address;
+			$ENV{PORT} = $port;
+			system('ssh $HOST -p $PORT');
+		}
+	} else {
+		print("Usage: -c NAME\nFor example: sshext -c local\n");
+	}
+}
+
+if ($flag eq '-n') {
+	my $name = $ARGV[1];
+	my $host = $ARGV[2];
+	my $port = $ARGV[3] || '22';
+
+	if ($name and $host) {
+		$dbh->do("INSERT INTO address(name,host,port) VALUES(?,?,?)", undef, $name, $host, $port);
+		print ("$host is added\n");
+	} else {
+		print("Usage: -n NAME HOST PORT\nFor example: -n local 127.0.0.1 22\n");
+	}
+}
+
+if ($flag eq '-r') {
+	my $name = $ARGV[1];
+	if ($name) {
+		my $bres = $dbh->do("DELETE FROM address WHERE name = ?", undef, $name);
+		if ($bres == 1) {
+			print ("$name is removed\n");
+		} else {
+			print ("Something is wrong\n");
+		}
+	} else {
+		print("Usage: -r NAME\nFor example: sshext -r local\n");
+	}
+}
+
+if ($flag eq '-l') {
+	my $list = $dbh->selectall_arrayref("SELECT * FROM address;");
+	print("Name | Host | Port\n");
+	foreach my $data (@$list) {
+		my $localname = $data->[1];
+		my $port = $data->[2];
+		my $address = $data->[3];
+		print("$localname | $address | $port\n");
+	}
+}
+
+if ($flag eq '-h') {
+	print("Use: sshtext FLAG VALUES\n
+\tOR: sshtext -c NAME HOST PORT\n
+\tOR: sshtext -C NAME USER\@HOST PORT\n
+Flags:\n
+  -c\t - connect to remoute server\n
+  -n\t - add a new server\n 
+  -r\t - remove a server\n
+  -l\t - show all list\n
+  -h\t - help\n");
+}
