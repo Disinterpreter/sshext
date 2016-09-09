@@ -5,7 +5,6 @@ Smart shell on simple unix ssh client
 # Install
 
 For debian/ubuntu:
-sudo apt-get install libnet-ssh-perl
 sudo apt-get install libclass-dbi-sqlite-perl
 
 
