@@ -3,9 +3,7 @@
 use strict;
 use warnings;
 use DBI;
-use Net::SSH;
-use Data::Dumper;
-use Net::SSH qw(ssh issh sshopen2 sshopen3);
+
 
 my $adressdb = '/opt/sshextend/usr/share/sshextend/base.db';
 my $dbh = DBI->connect ("dbi:SQLite:dbname=$adressdb","","");
