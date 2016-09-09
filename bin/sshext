@@ -4,7 +4,6 @@ use strict;
 use warnings;
 use DBI;
 
-
 my $adressdb = '/opt/sshextend/usr/share/sshextend/base.db';
 my $dbh = DBI->connect ("dbi:SQLite:dbname=$adressdb","","");
 
@@ -23,13 +22,12 @@ unless ($ARGV[0]) {
 	print ("Exec a sshext -h\n");
 	die("text");
 }
-my $reader = IO::File->new();
-my $writer = IO::File->new();
+
 if ($flag eq '-c') {
 	my $name = $ARGV[1];
 	if ($name) {
 		my $connectdata = $dbh->selectall_arrayref("SELECT * FROM address WHERE name = ?", undef, $name);
-		unless ($connectdata->[-1]) { # if notifications table is empty
+		unless ($connectdata->[-1]) { # if table table is empty
 			print("Unexpected error");
 			return;
 		}
